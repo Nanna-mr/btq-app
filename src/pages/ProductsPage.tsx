@@ -141,7 +141,7 @@ export function ProductsPage() {
         cell: ({ row }) =>
           canManageProducts ? (
             <div className="flex gap-2">
-              <Button size="sm" variant="ghost" icon={<Edit size={15} />} onClick={() => openEdit(row.original)}>{t('edit')}</Button>
+              <Button size="sm" variant="secondary" icon={<Edit size={15} />} onClick={() => openEdit(row.original)}>{t('edit')}</Button>
               <Button size="sm" variant="danger" icon={<Trash2 size={15} />} onClick={() => handleDelete(row.original.id)}>{t('delete')}</Button>
             </div>
           ) : null,

@@ -47,15 +47,15 @@ export function AppLayout() {
   return (
     <div className="page-shell">
       <div className="app-grid">
-        <aside className="border-r border-slate-200/80 bg-white/90 p-4 text-slate-900 backdrop-blur lg:min-h-screen">
-          <div className="mb-8 flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-md bg-blue-600 text-lg font-black text-white shadow-sm">B</div>
+        <aside className="border-r border-slate-900 bg-[#1e1e2e] p-5 text-white shadow-2xl lg:min-h-screen">
+          <div className="mb-10 flex items-center gap-3 rounded-2xl bg-white/10 p-3">
+            <div className="grid h-12 w-12 place-items-center rounded-xl bg-indigo-500 text-xl font-black text-white shadow-lg">B</div>
             <div>
-              <p className="text-lg font-black tracking-tight">{t('appName')}</p>
-              <p className="text-sm font-semibold text-slate-500">{user?.role === 'gerant' ? t('manager') : t('seller')}</p>
+              <p className="text-xl font-black tracking-tight text-white">{t('appName')}</p>
+              <p className="text-sm font-semibold text-slate-300">{user?.role === 'gerant' ? t('manager') : t('seller')}</p>
             </div>
           </div>
-          <nav className="grid gap-2">
+          <nav className="grid gap-3">
             {links
               .filter((link) => user && link.roles.includes(user.role))
               .map((link) => {
@@ -70,12 +70,12 @@ export function AppLayout() {
           </nav>
         </aside>
         <div className="min-w-0">
-          <header className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 bg-white/90 px-5 py-3 backdrop-blur">
+          <header className="sticky top-0 z-10 flex min-h-[72px] flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 bg-white/95 px-6 py-4 shadow-sm backdrop-blur">
             <div className="flex items-center gap-3">
               <Menu size={22} className="text-slate-700 lg:hidden" />
               <div>
-                <p className="text-sm font-semibold text-slate-500">{t('appName')}</p>
-                <h1 className="text-2xl font-black tracking-tight text-slate-950">{t(pageTitle)}</h1>
+                <p className="text-sm font-bold uppercase tracking-wide text-indigo-600">{t('appName')}</p>
+                <h1 className="text-3xl font-black tracking-tight text-slate-950">{t(pageTitle)}</h1>
               </div>
             </div>
             <div className="flex items-center gap-2">
