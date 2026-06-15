@@ -47,9 +47,9 @@ export function AppLayout() {
   return (
     <div className="page-shell">
       <div className="app-grid">
-        <aside className="bg-slate-900 p-4 text-white lg:min-h-screen">
+        <aside className="bg-white p-4 text-black lg:min-h-screen">
           <div className="mb-8 flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-md bg-blue-600 text-lg font-black text-white">B</div>
+            <div className="grid h-10 w-10 place-items-center rounded-md text-lg font-black text-black">B</div>
             <div>
               <p className="text-lg font-black">{t('appName')}</p>
               <p className="text-sm text-slate-300">{user?.role === 'gerant' ? t('manager') : t('seller')}</p>
@@ -74,7 +74,7 @@ export function AppLayout() {
             <div className="flex items-center gap-3">
               <Menu size={22} className="text-slate-700 lg:hidden" />
               <div>
-                <p className="text-sm font-semibold text-slate-500">{t('appName')}</p>
+                <p className="text-sm font-semibold text-black">{t('appName')}</p>
                 <h1 className="text-2xl font-black text-slate-900">{t(pageTitle)}</h1>
               </div>
             </div>

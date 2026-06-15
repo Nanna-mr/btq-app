@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CreditCard, Minus, Plus, ReceiptText, Search, Trash2 } from 'lucide-react';
+import { CreditCard, Minus, Plus, ReceiptText, Search, Trash2, LogOut, Clock, TrendingUp, X,  } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
