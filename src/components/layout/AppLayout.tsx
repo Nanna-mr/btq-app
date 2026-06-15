@@ -51,8 +51,8 @@ export function AppLayout() {
           <div className="mb-10 flex items-center gap-3 rounded-2xl bg-white/10 p-3">
             <div className="grid h-12 w-12 place-items-center rounded-xl bg-indigo-500 text-xl font-black text-white shadow-lg">B</div>
             <div>
-              <p className="text-xl font-black tracking-tight text-white">{t('appName')}</p>
-              <p className="text-sm font-semibold text-slate-300">{user?.role === 'gerant' ? t('manager') : t('seller')}</p>
+              <p className="text-[18px] font-black tracking-tight text-white">{t('appName')}</p>
+              <p className="text-[13px] font-semibold text-slate-300">{user?.role === 'gerant' ? t('manager') : t('seller')}</p>
             </div>
           </div>
           <nav className="grid gap-3">
