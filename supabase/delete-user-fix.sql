@@ -1,4 +1,6 @@
-create or replace function public.delete_user_with_relations(target_user_id uuid)
+alter table public.users add column if not exists is_active boolean not null default true;
+
+create or replace function public.archive_user_account(target_user_id uuid)
 returns void
 language plpgsql
 security definer
@@ -11,58 +13,33 @@ begin
     where id = auth.uid()
       and role = 'gerant'
   ) then
-    raise exception 'Only gerant can delete users';
+    raise exception 'Only gerant can archive users';
   end if;
 
   if target_user_id = auth.uid() then
-    raise exception 'Cannot delete the current user';
+    raise exception 'Cannot archive the current user';
   end if;
 
-  if not exists (
-    select 1
-    from public.users
-    where id = target_user_id
-  ) then
+  update public.users
+  set is_active = false
+  where id = target_user_id;
+
+  if not found then
     raise exception 'User not found';
   end if;
-
-  delete from public.sale_items
-  where sale_id in (
-    select id
-    from public.sales
-    where seller_id = target_user_id
-       or cash_session_id in (
-         select id
-         from public.cash_sessions
-         where opened_by = target_user_id
-       )
-  );
-
-  delete from public.stock_movements
-  where created_by = target_user_id
-     or cash_session_id in (
-       select id
-       from public.cash_sessions
-       where opened_by = target_user_id
-     );
-
-  delete from public.sales
-  where seller_id = target_user_id
-     or cash_session_id in (
-       select id
-       from public.cash_sessions
-       where opened_by = target_user_id
-     );
-
-  delete from public.cash_sessions
-  where opened_by = target_user_id;
-
-  delete from public.custom_orders
-  where created_by = target_user_id;
-
-  delete from public.users
-  where id = target_user_id;
 end;
 $$;
 
+create or replace function public.delete_user_with_relations(target_user_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  perform public.archive_user_account(target_user_id);
+end;
+$$;
+
+grant execute on function public.archive_user_account(uuid) to authenticated;
 grant execute on function public.delete_user_with_relations(uuid) to authenticated;

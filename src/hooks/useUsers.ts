@@ -71,7 +71,7 @@ export function useDeleteUser() {
 
   return useMutation({
     mutationFn: async (userId: string) => {
-      const { error } = await supabase.rpc('delete_user_with_relations', { target_user_id: userId });
+      const { error } = await supabase.rpc('archive_user_account', { target_user_id: userId });
 
       if (error) {
         throw error;
@@ -81,7 +81,9 @@ export function useDeleteUser() {
       await queryClient.cancelQueries({ queryKey: ['users'] });
       const previousUsers = queryClient.getQueryData<ManagedUser[]>(['users']);
 
-      queryClient.setQueryData<ManagedUser[]>(['users'], (current = []) => current.filter((user) => user.id !== userId));
+      queryClient.setQueryData<ManagedUser[]>(['users'], (current = []) =>
+        current.map((user) => (user.id === userId ? { ...user, isActive: false } : user)),
+      );
 
       return { previousUsers };
     },
