@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
@@ -11,8 +12,13 @@ export function UsersPage() {
   const { data: users = [], isLoading, isError } = useUsers();
   const updateStatus = useUpdateUserStatus();
   const deleteUser = useDeleteUser();
+  const [feedback, setFeedback] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleDelete = async (userId: string) => {
+    setFeedback('');
+    setErrorMessage('');
+
     if (currentUser?.id === userId) {
       return;
     }
@@ -21,12 +27,21 @@ export function UsersPage() {
       return;
     }
 
-    await deleteUser.mutateAsync(userId);
+    try {
+      await deleteUser.mutateAsync(userId);
+      setFeedback(t('userDeleted'));
+    } catch (error) {
+      console.error('Delete user failed', error);
+      const message = typeof error === 'object' && error && 'message' in error ? String(error.message) : error instanceof Error ? error.message : t('deleteUserFailed');
+      setErrorMessage(message || t('deleteUserFailed'));
+    }
   };
 
   return (
     <div className="grid gap-5">
       {isError ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-800">{t('usersLoadError')}</div> : null}
+      {feedback ? <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-900">{feedback}</div> : null}
+      {errorMessage ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-800">{errorMessage}</div> : null}
       <Card className="p-4">
         <h2 className="mb-4 text-2xl font-black text-emerald-950">{t('users')}</h2>
         <div className="table-wrap">

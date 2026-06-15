@@ -130,6 +130,8 @@
   "activate": "Activer",
   "deactivate": "Désactiver",
   "usersLoadError": "Impossible de charger les utilisateurs.",
+  "userDeleted": "Utilisateur supprimé avec succès.",
+  "deleteUserFailed": "Impossible de supprimer cet utilisateur. Vérifie le script Supabase de suppression puis réessaie.",
   "preferences": "Préférences",
   "language": "Langue",
   "theme": "Thème",

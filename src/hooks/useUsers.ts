@@ -77,11 +77,27 @@ export function useDeleteUser() {
         throw error;
       }
     },
+    onMutate: async (userId) => {
+      await queryClient.cancelQueries({ queryKey: ['users'] });
+      const previousUsers = queryClient.getQueryData<ManagedUser[]>(['users']);
+
+      queryClient.setQueryData<ManagedUser[]>(['users'], (current = []) => current.filter((user) => user.id !== userId));
+
+      return { previousUsers };
+    },
+    onError: (_error, _userId, context) => {
+      if (context?.previousUsers) {
+        queryClient.setQueryData(['users'], context.previousUsers);
+      }
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['users'] });
       await queryClient.invalidateQueries({ queryKey: ['cashSessions'] });
       await queryClient.invalidateQueries({ queryKey: ['salesReport'] });
       await queryClient.invalidateQueries({ queryKey: ['dashboardMetrics'] });
+    },
+    onSettled: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['users'] });
     },
   });
 }

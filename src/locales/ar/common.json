@@ -130,6 +130,8 @@
   "activate": "تفعيل",
   "deactivate": "تعطيل",
   "usersLoadError": "تعذر تحميل المستخدمين.",
+  "userDeleted": "تم حذف المستخدم بنجاح.",
+  "deleteUserFailed": "تعذر حذف هذا المستخدم. تحققي من سكريبت الحذف في Supabase ثم أعيدي المحاولة.",
   "preferences": "التفضيلات",
   "language": "اللغة",
   "theme": "المظهر",
