@@ -119,3 +119,4 @@ Le dernier build local passe avec succes. Vite signale seulement un warning de t
 - Le PDF direct est genere cote navigateur sans dependance externe lourde.
 - Le ticket imprimable de l'ecran `/ticket/vente` affiche le logo boutique.
 - La creation d'utilisateurs Auth administrateur reste limitee par Supabase cote client ; le projet gere la desactivation des profils existants et la creation normale via l'ecran de connexion.
+"# btq-app" 
