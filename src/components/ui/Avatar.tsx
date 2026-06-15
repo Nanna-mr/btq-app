@@ -11,7 +11,7 @@ export function Avatar({ name }: AvatarProps) {
     .toUpperCase();
 
   return (
-    <div className="grid h-10 w-10 place-items-center rounded-full bg-amber-100 text-sm font-black text-amber-950">
+    <div className="grid h-10 w-10 place-items-center rounded-full border border-blue-100 bg-blue-50 text-sm font-black text-blue-700 shadow-sm">
       {initials}
     </div>
   );

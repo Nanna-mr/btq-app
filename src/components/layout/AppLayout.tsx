@@ -47,12 +47,12 @@ export function AppLayout() {
   return (
     <div className="page-shell">
       <div className="app-grid">
-        <aside className="bg-white p-4 text-black lg:min-h-screen">
+        <aside className="border-r border-slate-200/80 bg-white/90 p-4 text-slate-900 backdrop-blur lg:min-h-screen">
           <div className="mb-8 flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-md text-lg font-black text-black">B</div>
+            <div className="grid h-10 w-10 place-items-center rounded-md bg-blue-600 text-lg font-black text-white shadow-sm">B</div>
             <div>
-              <p className="text-lg font-black">{t('appName')}</p>
-              <p className="text-sm text-slate-300">{user?.role === 'gerant' ? t('manager') : t('seller')}</p>
+              <p className="text-lg font-black tracking-tight">{t('appName')}</p>
+              <p className="text-sm font-semibold text-slate-500">{user?.role === 'gerant' ? t('manager') : t('seller')}</p>
             </div>
           </div>
           <nav className="grid gap-2">
@@ -70,12 +70,12 @@ export function AppLayout() {
           </nav>
         </aside>
         <div className="min-w-0">
-          <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3">
+          <header className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 bg-white/90 px-5 py-3 backdrop-blur">
             <div className="flex items-center gap-3">
               <Menu size={22} className="text-slate-700 lg:hidden" />
               <div>
-                <p className="text-sm font-semibold text-black">{t('appName')}</p>
-                <h1 className="text-2xl font-black text-slate-900">{t(pageTitle)}</h1>
+                <p className="text-sm font-semibold text-slate-500">{t('appName')}</p>
+                <h1 className="text-2xl font-black tracking-tight text-slate-950">{t(pageTitle)}</h1>
               </div>
             </div>
             <div className="flex items-center gap-2">
