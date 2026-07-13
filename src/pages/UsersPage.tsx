@@ -38,7 +38,7 @@ export function UsersPage() {
   };
 
   return (
-    <div className="grid gap-5">
+    <div className="erp-page grid gap-5">
       {isError ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-800">{t('usersLoadError')}</div> : null}
       {feedback ? <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-900">{feedback}</div> : null}
       {errorMessage ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-800">{errorMessage}</div> : null}

@@ -42,7 +42,14 @@ export default function App() {
           </ProtectedRoute>
         }
       >
-        <Route path="/vente" element={<SalePage />} />
+        <Route
+          path="/vente"
+          element={
+            <RoleRoute roles={['vendeur', 'gerant']}>
+              <SalePage />
+            </RoleRoute>
+          }
+        />
         <Route path="/ticket/vente" element={<SaleTicketPage />} />
         <Route
           path="/produits"

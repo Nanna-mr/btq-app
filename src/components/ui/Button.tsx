@@ -7,9 +7,9 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants = {
-  primary: 'border border-indigo-500 bg-indigo-500 text-white shadow-sm hover:-translate-y-0.5 hover:border-indigo-600 hover:bg-indigo-600 hover:shadow-md',
-  secondary: 'border border-slate-300 bg-white text-slate-800 shadow-sm hover:-translate-y-0.5 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 hover:shadow-md',
-  ghost: 'border border-transparent bg-transparent text-slate-700 hover:bg-indigo-50 hover:text-indigo-700',
+  primary: 'border border-[#245855] bg-[#245855] text-white hover:border-[#1b4542] hover:bg-[#1b4542]',
+  secondary: 'border border-[#dedede] bg-white text-[#111111] hover:border-[#989a9a] hover:bg-[#f4f4f4]',
+  ghost: 'border border-transparent bg-transparent text-[#111111] hover:bg-[#f4f4f4]',
   danger: 'border border-red-600 bg-red-600 text-white shadow-sm hover:-translate-y-0.5 hover:bg-red-700 hover:shadow-md',
 };
 
@@ -22,7 +22,7 @@ const sizes = {
 export function Button({ variant = 'primary', size = 'md', icon, className = '', children, ...props }: ButtonProps) {
   return (
     <button
-      className={`inline-flex items-center justify-center gap-2 rounded-md font-bold transition-all duration-200 ease-out focus:outline-none focus:ring-4 focus:ring-indigo-500/20 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 ${variants[variant]} ${sizes[size]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-md font-bold transition-all duration-200 ease-out focus:outline-none focus:ring-4 focus:ring-[#245855]/15 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 ${variants[variant]} ${sizes[size]} ${className}`}
       {...props}
     >
       {icon}

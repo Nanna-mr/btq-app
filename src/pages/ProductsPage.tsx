@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable, type ColumnDef } from '@tanstack/react-table';
-import { Edit, ImagePlus, Plus, Search, Trash2 } from 'lucide-react';
+import { Edit, Grid2X2, ImagePlus, List, Menu, Plus, Trash2 } from 'lucide-react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
@@ -92,6 +91,9 @@ export function ProductsPage() {
   const [imagePreview, setImagePreview] = useState('');
   const [feedback, setFeedback] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [actionProductId, setActionProductId] = useState('');
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const canManageProducts = user?.role === 'gerant';
   const form = useForm<ProductFormInput, unknown, ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -112,11 +114,6 @@ export function ProductsPage() {
 
   const columns = useMemo<ColumnDef<Product>[]>(
     () => [
-      {
-        accessorKey: 'imageUrl',
-        header: '',
-        cell: ({ row }) => <img className="h-12 w-12 rounded-lg object-cover" src={row.original.imageUrl} alt={row.original.name} />,
-      },
       { accessorKey: 'name', header: t('name') },
       { accessorKey: 'category', header: t('category') },
       { accessorKey: 'price', header: t('price'), cell: ({ row }) => formatCurrency(row.original.price) },
@@ -132,7 +129,7 @@ export function ProductsPage() {
         cell: ({ row }) => {
           const status = row.original.status;
           const tone = status === 'available' ? 'green' : status === 'low' ? 'red' : 'red';
-          return <Badge tone={tone}>{status === 'low' ? t('lowStockBadge') : t(status)}</Badge>;
+          return <span className={status === 'available' ? 'products-status-available' : 'products-status-low'}>{status === 'low' ? t('lowStockBadge') : t(status)}</span>;
         },
       },
       {
@@ -140,18 +137,36 @@ export function ProductsPage() {
         header: t('actions'),
         cell: ({ row }) =>
           canManageProducts ? (
-            <div className="flex gap-2">
-              <Button size="sm" variant="secondary" icon={<Edit size={15} />} onClick={() => openEdit(row.original)}>{t('edit')}</Button>
-              <Button size="sm" variant="danger" icon={<Trash2 size={15} />} onClick={() => handleDelete(row.original.id)}>{t('delete')}</Button>
+            <div className="products-action-cell">
+              <button className="products-action-trigger" type="button" onClick={() => setActionProductId((current) => (current === row.original.id ? '' : row.original.id))} aria-label={t('actions')}>
+                <Menu size={26} />
+              </button>
+              {actionProductId === row.original.id ? (
+                <div className="products-action-menu">
+                  <button type="button" onClick={() => { setActionProductId(''); openEdit(row.original); }}>
+                    <Edit size={16} />
+                    {t('edit')}
+                  </button>
+                  <button type="button" onClick={() => { setActionProductId(''); void handleDelete(row.original.id); }}>
+                    <Trash2 size={16} />
+                    {t('delete')}
+                  </button>
+                </div>
+              ) : null}
             </div>
           ) : null,
       },
     ],
-    [canManageProducts, t],
+    [actionProductId, canManageProducts, t],
+  );
+  const categoryOptions = useMemo(() => ['all', ...categories.map((category) => category.name)], [categories]);
+  const filteredProducts = useMemo(
+    () => products.filter((product) => categoryFilter === 'all' || product.category === categoryFilter),
+    [categoryFilter, products],
   );
 
   const table = useReactTable({
-    data: products,
+    data: filteredProducts,
     columns,
     state: { globalFilter },
     onGlobalFilterChange: setGlobalFilter,
@@ -222,59 +237,108 @@ export function ProductsPage() {
   };
 
   return (
-    <div className="grid gap-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="font-semibold text-emerald-800">{t('products')}</p>
-          <h2 className="text-3xl font-black text-emerald-950">{products.length} articles</h2>
-        </div>
-        {canManageProducts ? (
-          <Button icon={<Plus size={18} />} onClick={openCreate}>{t('addProduct')}</Button>
-        ) : null}
-      </div>
+    <div className="products-page">
       {feedback ? <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-900">{feedback}</div> : null}
       {errorMessage ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-800">{errorMessage}</div> : null}
-      <Card className="p-4">
-        <div className="mb-4 grid gap-3 md:grid-cols-[1fr_auto]">
-          <div className="relative">
-            <Search className="absolute left-3 top-3 text-slate-400 rtl:left-auto rtl:right-3" size={18} />
-            <input className="input-control ps-10" value={globalFilter} onChange={(event) => setGlobalFilter(event.target.value)} placeholder={t('search')} />
-          </div>
-          <Button variant="secondary" onClick={() => table.setPageSize(10)}>10 / page</Button>
+      <div className="products-toolbar">
+        <div className="products-view-icons">
+          <button className={`products-view-button ${viewMode === 'list' ? 'is-active' : ''}`} type="button" onClick={() => setViewMode('list')} aria-label="Vue liste">
+            <List size={26} />
+          </button>
+          <button className={`products-view-button ${viewMode === 'grid' ? 'is-active' : ''}`} type="button" onClick={() => setViewMode('grid')} aria-label="Vue grille">
+            <Grid2X2 size={25} />
+          </button>
         </div>
-        <div className="table-wrap">
-          <table className="data-table">
-            <thead>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <th key={header.id} onClick={header.column.getToggleSortingHandler()}>
-                      {flexRender(header.column.columnDef.header, header.getContext())}
-                    </th>
+        <input className="products-search" value={globalFilter} onChange={(event) => setGlobalFilter(event.target.value)} placeholder={t('search')} aria-label={t('search')} />
+        <select className="products-filter-select" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} aria-label={t('category')}>
+          {categoryOptions.map((category) => (
+            <option key={category} value={category}>
+              {category === 'all' ? 'Filter' : category}
+            </option>
+          ))}
+        </select>
+        {canManageProducts ? (
+          <button className="products-add-button" type="button" onClick={openCreate}>
+            {t('addProduct')}
+          </button>
+        ) : null}
+        <p className="products-total">Total Produits: {products.length}</p>
+      </div>
+      {viewMode === 'list' ? (
+        <>
+          <div className="products-table-shell">
+            <table className="products-table">
+              <thead>
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <tr key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => (
+                        <th key={header.id} onClick={header.column.getToggleSortingHandler()}>
+                          {flexRender(header.column.columnDef.header, header.getContext())}
+                        </th>
+                      ))}
+                    </tr>
                   ))}
-                </tr>
-              ))}
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <tr><td colSpan={8}>{t('loading')}</td></tr>
-              ) : (
-                table.getRowModel().rows.map((row) => (
-                  <tr key={row.id}>
-                    {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
-                    ))}
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                  {isLoading ? (
+                    <tr><td colSpan={7}>{t('loading')}</td></tr>
+                  ) : (
+                    table.getRowModel().rows.map((row) => (
+                      <tr key={row.id}>
+                        {row.getVisibleCells().map((cell) => (
+                          <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
+                        ))}
+                      </tr>
+                    ))
+                  )}
+              </tbody>
+            </table>
+          </div>
+          <div className="products-pagination">
+            <Button variant="ghost" disabled={!table.getCanPreviousPage()} onClick={() => table.previousPage()}>{t('previous')}</Button>
+            <Button variant="ghost" disabled={!table.getCanNextPage()} onClick={() => table.nextPage()}>{t('next')}</Button>
+          </div>
+        </>
+      ) : (
+        <div className="products-grid-view">
+          {isLoading ? <div className="products-grid-empty">{t('loading')}</div> : null}
+          {!isLoading && table.getRowModel().rows.length === 0 ? <div className="products-grid-empty">{t('noProducts')}</div> : null}
+          {table.getRowModel().rows.map((row) => {
+            const product = row.original;
+            return (
+              <article className="products-grid-card" key={product.id}>
+                <img src={product.imageUrl} alt={product.name} />
+                <div className="products-grid-card-body">
+                  <div>
+                    <p>{product.name}</p>
+                    <span>{product.category}</span>
+                  </div>
+                  <strong>{formatCurrency(product.price)}</strong>
+                  <div className="products-grid-meta">
+                    <span>Stock {product.stock}</span>
+                    <span>{formatCurrency(product.price - product.purchasePrice)}</span>
+                  </div>
+                  <span className={product.status === 'available' ? 'products-status-available' : 'products-status-low'}>
+                    {product.status === 'low' ? t('lowStockBadge') : t(product.status)}
+                  </span>
+                  {canManageProducts ? (
+                    <div className="products-grid-actions">
+                      <button type="button" onClick={() => openEdit(product)}>
+                        <Edit size={16} />
+                        {t('edit')}
+                      </button>
+                      <button type="button" onClick={() => void handleDelete(product.id)}>
+                        <Trash2 size={16} />
+                        {t('delete')}
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              </article>
+            );
+          })}
         </div>
-        <div className="mt-4 flex justify-end gap-2">
-          <Button variant="ghost" disabled={!table.getCanPreviousPage()} onClick={() => table.previousPage()}>{t('previous')}</Button>
-          <Button variant="ghost" disabled={!table.getCanNextPage()} onClick={() => table.nextPage()}>{t('next')}</Button>
-        </div>
-      </Card>
+      )}
       {dialogOpen && canManageProducts ? (
         <div className="fixed inset-0 z-20 grid place-items-center overflow-y-auto bg-emerald-950/50 p-4">
           <Card className="my-8 w-full max-w-3xl p-5">

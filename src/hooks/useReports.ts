@@ -194,17 +194,33 @@ export function useOpenCashSession() {
 
   return useMutation({
     mutationFn: async (payload: CashSessionPayload) => {
-      const { error } = await supabase.from('cash_sessions').insert({
-        opened_by: payload.openedBy,
-        opening_amount: payload.openingAmount,
-        note: payload.note || null,
-      });
+      const { data, error } = await supabase
+        .from('cash_sessions')
+        .insert({
+          opened_by: payload.openedBy,
+          opening_amount: payload.openingAmount,
+          note: payload.note || null,
+        })
+        .select('id,opened_by,opening_amount,closing_amount,opened_at,closed_at,note,users(full_name)')
+        .single<CashSessionRow>();
 
       if (error) {
         throw error;
       }
+
+      return {
+        id: data.id,
+        openedBy: data.opened_by,
+        openedByName: relationName(data.users),
+        openingAmount: Number(data.opening_amount),
+        closingAmount: data.closing_amount === null ? null : Number(data.closing_amount),
+        openedAt: data.opened_at,
+        closedAt: data.closed_at,
+        note: data.note ?? '',
+      } satisfies CashSession;
     },
-    onSuccess: async () => {
+    onSuccess: async (session) => {
+      queryClient.setQueryData<CashSession[]>(['cashSessions'], (current = []) => [session, ...current.filter((item) => item.id !== session.id)]);
       await queryClient.invalidateQueries({ queryKey: ['cashSessions'] });
       await queryClient.invalidateQueries({ queryKey: ['cashSessionSales'] });
       await queryClient.invalidateQueries({ queryKey: ['salesReport'] });

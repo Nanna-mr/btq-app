@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlertTriangle, Banknote, ClipboardList, ShoppingBag } from 'lucide-react';
+import { AlertTriangle, Banknote, ClipboardList, Package, ShoppingBag } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { formatCurrency } from '../lib/utils';
@@ -22,65 +22,128 @@ export function DashboardPage() {
 
     return Array.from(counts.entries()).slice(0, 7);
   }, [products]);
+  const categoryStockValues = useMemo(() => {
+    const values = new Map<string, number>();
+
+    for (const product of products) {
+      values.set(product.category, (values.get(product.category) ?? 0) + product.price * product.stock);
+    }
+
+    return values;
+  }, [products]);
+  const maxCategoryCount = Math.max(1, ...categoryCounts.map(([, count]) => count));
+  const donutTotal = metrics.todaySales + metrics.pendingOrders + lowStockProducts.length;
+  const safeDonutTotal = Math.max(1, donutTotal);
+  const ordersSlice = ((metrics.todaySales + metrics.pendingOrders) / safeDonutTotal) * 100;
+  const safeSalesSlice = (metrics.todaySales / safeDonutTotal) * 100;
+  const segmentPercent = (value: number) => Math.round((value / safeDonutTotal) * 100);
+  const donutStyle = {
+    background: `conic-gradient(#245f5b 0 ${safeSalesSlice}%, #4a8780 ${safeSalesSlice}% ${ordersSlice}%, #d9d9d9 ${ordersSlice}% 100%)`,
+  };
+  const yAxisSteps = [maxCategoryCount, Math.ceil(maxCategoryCount * 0.75), Math.ceil(maxCategoryCount * 0.5), Math.ceil(maxCategoryCount * 0.25), 0];
 
   const stats = [
     { label: t('revenue'), value: formatCurrency(metrics.revenue), icon: Banknote },
     { label: t('todaySales'), value: String(metrics.todaySales), icon: ShoppingBag },
     { label: t('pendingOrders'), value: String(metrics.pendingOrders), icon: ClipboardList },
-    { label: t('lowStock'), value: String(lowStockProducts.length), icon: AlertTriangle },
-    { label: t('inventoryValue'), value: formatCurrency(inventoryValue), icon: Banknote },
+    { label: t('inventoryValue'), value: formatCurrency(inventoryValue), icon: Package },
   ];
 
   return (
-    <div className="grid gap-5">
+    <div className="dashboard-cummo">
       {(productsLoading || metricsLoading) ? <div className="content-card p-4 font-bold text-slate-500">{t('loading')}</div> : null}
-      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <div className="metric-card" key={stat.label}>
-              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-100 text-emerald-900">
-                <Icon size={22} />
-              </div>
-              <p className="text-sm font-bold text-slate-500">{stat.label}</p>
-              <p className="mt-1 text-2xl font-black text-emerald-950">{stat.value}</p>
-            </div>
-          );
-        })}
-      </section>
-      <div className="grid gap-5 xl:grid-cols-[1fr_22rem]">
-        <Card className="p-4">
-          <h2 className="mb-4 text-2xl font-black text-emerald-950">{t('productsByCategory')}</h2>
-          {categoryCounts.length === 0 ? (
-            <p className="rounded-lg bg-slate-50 p-4 text-sm font-semibold text-slate-500">{t('noProducts')}</p>
-          ) : (
-            <div className="grid h-80 items-end gap-3 sm:grid-cols-7">
-              {categoryCounts.map(([category, count]) => (
-                <div className="grid gap-2" key={category}>
-                  <div className="rounded-t-lg bg-emerald-800" style={{ height: `${Math.max(24, count * 34)}px` }} />
-                  <p className="text-center text-xs font-bold text-slate-500">{category}</p>
+      <div className="dashboard-top-grid">
+        <section className="dashboard-stat-grid">
+          {stats.map((stat) => {
+            const Icon = stat.icon;
+            return (
+              <Card className="dashboard-stat-card" key={stat.label}>
+                <div className="dashboard-stat-icon">
+                  <Icon size={24} />
                 </div>
-              ))}
-            </div>
-          )}
-        </Card>
-        <Card className="p-4">
-          <h2 className="mb-4 text-2xl font-black text-emerald-950">{t('lowStock')}</h2>
-          <div className="grid gap-3">
+                <p>{stat.label}</p>
+                <strong>{stat.value}</strong>
+              </Card>
+            );
+          })}
+        </section>
+        <aside className="stock-alert-window">
+          <div className="stock-alert-title">
+            <AlertTriangle size={22} />
+            <h2>{t('lowStock')}</h2>
+          </div>
+          <div className="stock-alert-scroll">
             {lowStockProducts.length === 0 ? (
-              <p className="rounded-lg bg-slate-50 p-4 text-sm font-semibold text-slate-500">{t('noStockAlerts')}</p>
+              <p className="stock-alert-empty">{t('noStockAlerts')}</p>
             ) : (
               lowStockProducts.map((product) => (
-                <div key={product.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 p-3">
+                <div key={product.id} className="stock-alert-item">
                   <div>
-                    <p className="font-bold text-emerald-950">{product.name}</p>
-                    <p className="text-sm text-slate-500">{product.category}</p>
+                    <p>{product.name}</p>
+                    <span>{product.category}</span>
                   </div>
                   <Badge tone={product.stock === 0 ? 'red' : 'amber'}>{product.stock}</Badge>
                 </div>
               ))
             )}
           </div>
+        </aside>
+      </div>
+      <div className="dashboard-chart-grid">
+        <Card className="dashboard-donut-card">
+          <h2>statistique</h2>
+          <div
+            className="dashboard-donut"
+            style={donutStyle}
+            title={`${t('todaySales')}: ${metrics.todaySales} (${segmentPercent(metrics.todaySales)}%) · ${t('pendingOrders')}: ${metrics.pendingOrders} (${segmentPercent(metrics.pendingOrders)}%) · ${t('lowStock')}: ${lowStockProducts.length} (${segmentPercent(lowStockProducts.length)}%)`}
+          >
+            <span>
+              <strong>{donutTotal}</strong>
+              <small>Total</small>
+            </span>
+          </div>
+          <div className="dashboard-donut-legend">
+            <p className="dashboard-legend-sales"><i aria-hidden="true" /><span>{t('todaySales')} · {segmentPercent(metrics.todaySales)}%</span></p>
+            <p className="dashboard-legend-orders"><i aria-hidden="true" /><span>{t('pendingOrders')} · {segmentPercent(metrics.pendingOrders)}%</span></p>
+            <p className="dashboard-legend-alerts"><i aria-hidden="true" /><span>{t('lowStock')} · {segmentPercent(lowStockProducts.length)}%</span></p>
+          </div>
+        </Card>
+        <Card className="dashboard-bar-card">
+          <div className="dashboard-card-heading">
+            <h2>{t('productsByCategory')}</h2>
+            <span>View<br />all →</span>
+          </div>
+          {categoryCounts.length === 0 ? (
+            <p className="rounded-lg bg-slate-50 p-4 text-sm font-semibold text-slate-500">{t('noProducts')}</p>
+          ) : (
+            <div className="dashboard-bar-plot">
+              <div className="dashboard-bar-axis">
+                {yAxisSteps.map((step) => (
+                  <span key={step}>{step}</span>
+                ))}
+              </div>
+              <div className="dashboard-bars">
+                {categoryCounts.map(([category, count], index) => {
+                  const height = Math.max(30, (count / maxCategoryCount) * 240);
+                  const isPrimary = count === maxCategoryCount || index === Math.min(4, categoryCounts.length - 1);
+
+                  return (
+                    <div className="dashboard-bar-column" key={category}>
+                    <div
+                      className={isPrimary ? 'dashboard-bar dashboard-bar-primary' : 'dashboard-bar'}
+                      style={{ height: `${height}px` }}
+                      title={`${category}: ${count} ${t('products').toLowerCase()} · ${formatCurrency(categoryStockValues.get(category) ?? 0)}`}
+                    >
+                        <span>{count}</span>
+                      </div>
+                      <p>{category}</p>
+                      <small>{formatCurrency(categoryStockValues.get(category) ?? 0)}</small>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </Card>
       </div>
     </div>

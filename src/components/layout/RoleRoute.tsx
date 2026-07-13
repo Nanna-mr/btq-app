@@ -4,14 +4,28 @@ import type { UserRole } from '../../types/User';
 import { useAuthStore } from '../../stores/authStore';
 
 interface RoleRouteProps {
-  role: UserRole;
+  role?: UserRole;
+  roles?: UserRole[];
   children: ReactNode;
 }
 
-export function RoleRoute({ role, children }: RoleRouteProps) {
-  const user = useAuthStore((state) => state.user);
+function canAccess(userRole: UserRole | undefined, allowedRoles: UserRole[]) {
+  if (!userRole) {
+    return false;
+  }
 
-  if (user?.role !== role) {
+  if (userRole === 'gerant') {
+    return true;
+  }
+
+  return allowedRoles.includes(userRole);
+}
+
+export function RoleRoute({ role, roles, children }: RoleRouteProps) {
+  const user = useAuthStore((state) => state.user);
+  const allowedRoles = roles ?? (role ? [role] : []);
+
+  if (!canAccess(user?.role, allowedRoles)) {
     return <Navigate to="/vente" replace />;
   }
 

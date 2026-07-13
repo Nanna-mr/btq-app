@@ -1,4 +1,5 @@
 alter table public.users add column if not exists is_active boolean not null default true;
+alter table public.users add column if not exists archived_at timestamptz;
 
 create or replace function public.archive_user_account(target_user_id uuid)
 returns void
@@ -21,7 +22,9 @@ begin
   end if;
 
   update public.users
-  set is_active = false
+  set
+    is_active = false,
+    archived_at = now()
   where id = target_user_id;
 
   if not found then

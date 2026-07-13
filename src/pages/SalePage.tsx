@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CreditCard, Minus, Plus, ReceiptText, Search, Trash2, LogOut, Clock, TrendingUp, X,  } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { CreditCard, Download, Minus, Plus, Printer, ReceiptText, Search, Trash2, X } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
@@ -12,14 +11,16 @@ import { useAuthStore } from '../stores/authStore';
 import { useCheckoutSale, useTodaySalesCount } from '../hooks/useSales';
 import type { Product, ProductVariant } from '../types/Product';
 import { useCashSessions, useCashSessionSales, useCloseCashSession, useOpenCashSession } from '../hooks/useReports';
+import { defaultShopSettings, useShopSettings } from '../hooks/useShopSettings';
+import { downloadSaleTicket, type SaleTicket } from '../lib/tickets';
 
 const SEARCH_DELAY = 300;
 
 export function SalePage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const { data: products = [], isLoading, error } = useProducts();
+  const { data: settings = defaultShopSettings } = useShopSettings();
   const { data: todaySales = 0 } = useTodaySalesCount();
   const { data: cashSessions = [] } = useCashSessions();
   const checkoutSale = useCheckoutSale();
@@ -51,7 +52,8 @@ export function SalePage() {
   const [openingAmount, setOpeningAmount] = useState(0);
   const [openingNote, setOpeningNote] = useState('');
   const [physicalCash, setPhysicalCash] = useState(0);
-  const activeCashSession = cashSessions.find((session) => !session.closedAt);
+  const [latestTicket, setLatestTicket] = useState<SaleTicket | null>(null);
+  const activeCashSession = cashSessions.find((session) => !session.closedAt && session.openedBy === user?.id);
   const { data: sessionSales = [] } = useCashSessionSales(activeCashSession?.id);
 
   useEffect(() => {
@@ -142,8 +144,10 @@ export function SalePage() {
       setOpeningDialogOpen(false);
       setOpeningAmount(0);
       setOpeningNote('');
-    } catch {
-      setErrorMessage(t('operationFailed'));
+    } catch (error) {
+      console.error('Cash session opening failed', error);
+      const message = error instanceof Error ? error.message : typeof error === 'object' && error && 'message' in error ? String(error.message) : t('operationFailed');
+      setErrorMessage(message || t('operationFailed'));
     }
   };
 
@@ -163,6 +167,7 @@ export function SalePage() {
       clearCart();
       setCheckoutOpen(false);
       setVariantProduct(null);
+      setLatestTicket(null);
       setClosingDialogOpen(false);
       setPhysicalCash(0);
     } catch {
@@ -195,7 +200,7 @@ export function SalePage() {
       setCheckoutOpen(false);
       setCustomerPhone('');
       setPaidAmount(0);
-      navigate('/ticket/vente', { state: { ticket } });
+      setLatestTicket(ticket);
     } catch {
       setErrorMessage(t('saleFailed'));
     }
@@ -248,32 +253,32 @@ export function SalePage() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 grid gap-4 overflow-auto bg-slate-50 p-4 xl:grid-cols-[minmax(0,1fr)_25rem]">
-      <section className="grid gap-4">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <p className="font-semibold text-slate-500">{user?.name}</p>
-            <h2 className="text-3xl font-black text-slate-950">{t('pos')}</h2>
+    <div className="pos-workspace">
+      <section className="pos-product-panel">
+        <div className="pos-topbar">
+          <div className="pos-register-name">
+            <span>{user?.name}</span>
+            <strong>{t('pos')}</strong>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <div className="metric-card min-w-36">
-              <p className="text-sm font-bold text-slate-500">{t('todaySales')}</p>
-              <p className="text-2xl font-black text-emerald-950">{todaySales}</p>
+          <div className="pos-session-metrics">
+            <div>
+              <span>{t('todaySales')}</span>
+              <strong>{todaySales}</strong>
             </div>
-            <div className="metric-card min-w-36">
-              <p className="text-sm font-bold text-slate-500">{t('sessionTotal')}</p>
-              <p className="text-2xl font-black text-emerald-950">{formatCurrency(sessionTotal)}</p>
+            <div>
+              <span>{t('sessionTotal')}</span>
+              <strong>{formatCurrency(sessionTotal)}</strong>
             </div>
             <Button variant="danger" onClick={() => { setPhysicalCash(expectedClosing); setClosingDialogOpen(true); }} disabled={closeCashSession.isPending}>
               {t('closeCash')}
             </Button>
           </div>
         </div>
-        <div className="relative">
-          <Search className="absolute left-3 top-3 text-slate-400 rtl:left-auto rtl:right-3" size={18} />
-          <input ref={searchRef} className="input-control ps-10" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={`${t('search')} · F2`} />
+        <div className="pos-searchbar">
+          <Search size={18} />
+          <input ref={searchRef} value={query} onChange={(event) => setQuery(event.target.value)} placeholder={`${t('search')} · F2`} />
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-1">
+        <div className="pos-category-tabs">
           {categories.map((item) => (
             <Button key={item} variant={category === item ? 'primary' : 'secondary'} size="sm" onClick={() => setCategory(item)}>
               {item === 'all' ? t('all') : item}
@@ -285,44 +290,48 @@ export function SalePage() {
         {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-800">{t('productsLoadError')}</div> : null}
         {isLoading ? <div className="content-card p-4 font-bold text-slate-500">{t('loading')}</div> : null}
         {!isLoading && filteredProducts.length === 0 ? <div className="content-card p-4 font-bold text-slate-500">{t('noProducts')}</div> : null}
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="pos-product-grid">
           {filteredProducts.map((product) => (
             <button
               key={product.id}
-              className="content-card grid gap-3 p-3 text-start transition hover:-translate-y-0.5 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
+              className="pos-product-card"
               disabled={product.stock === 0}
               onClick={() => chooseProduct(product)}
             >
-              <img className="h-32 w-full rounded-lg object-cover" src={product.imageUrl} alt={product.name} />
-              <div className="flex items-start justify-between gap-2">
+              <img src={product.imageUrl} alt={product.name} />
+              <div>
                 <div>
-                  <p className="font-black text-emerald-950">{product.name}</p>
-                  <p className="text-sm text-slate-500">{product.category}</p>
+                  <p>{product.name}</p>
+                  <span>{product.category}</span>
                 </div>
                 <Badge tone={product.stock > 5 ? 'green' : product.stock > 0 ? 'amber' : 'red'}>{product.stock}</Badge>
               </div>
-              <p className="text-lg font-black text-emerald-900">{formatCurrency(product.price)}</p>
+              <strong>{formatCurrency(product.price)}</strong>
             </button>
           ))}
         </div>
       </section>
-      <Card className="h-fit p-4">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="text-2xl font-black text-emerald-950">{t('cart')}</h2>
+      <Card className="pos-cart-panel">
+        <div className="pos-cart-header">
+          <h2>{t('cart')} <span>{items.length}</span></h2>
           <Button variant="ghost" icon={<Trash2 size={17} />} onClick={clearCart}>{t('clear')}</Button>
         </div>
-        <div className="grid gap-3">
+        <div className="pos-customer-strip">
+          <span>{customerPhone || 'Client comptoir'}</span>
+          <button type="button" onClick={() => setCustomerPhone('')}>×</button>
+        </div>
+        <div className="pos-cart-items">
           {items.length === 0 ? (
-            <p className="rounded-lg bg-slate-50 p-4 text-sm font-semibold text-slate-500">{t('emptyCart')}</p>
+            <p className="pos-empty-cart">{t('emptyCart')}</p>
           ) : (
             items.map((item) => (
-              <div key={item.variantId} className="grid gap-2 rounded-lg border border-slate-200 p-3">
+              <div key={item.variantId} className="pos-cart-item">
                 <div className="flex justify-between gap-3">
                   <div>
-                    <p className="font-bold text-emerald-950">{item.name}</p>
-                    <p className="text-xs font-semibold text-slate-500">{item.sku}</p>
+                    <p>{item.name}</p>
+                    <span>{item.sku}</span>
                   </div>
-                  <p className="font-black">{formatCurrency(item.unitPrice * item.quantity)}</p>
+                  <strong>{formatCurrency(item.unitPrice * item.quantity)}</strong>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -336,7 +345,7 @@ export function SalePage() {
             ))
           )}
         </div>
-        <div className="mt-4 grid gap-3 border-t border-slate-200 pt-4">
+        <div className="pos-cart-summary">
           <label className="form-field">
             <span className="field-label">{t('discount')}</span>
             <input className="input-control" type="number" min={0} value={discount} onChange={(event) => applyDiscount(Number(event.target.value))} />
@@ -401,6 +410,78 @@ export function SalePage() {
               </div>
               <Button size="lg" icon={<ReceiptText size={18} />} disabled={checkoutSale.isPending} onClick={handleCheckout}>
                 {checkoutSale.isPending ? t('loading') : t('validateSale')}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      ) : null}
+      {latestTicket ? (
+        <div className="fixed inset-0 z-[70] grid place-items-center bg-black/45 p-4">
+          <Card className="max-h-[92vh] w-full max-w-md overflow-y-auto p-0">
+            <div className="flex items-center justify-between gap-3 bg-slate-950 px-5 py-4 text-white">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide">{t('saleTicket')}</p>
+                <p className="text-2xl font-black">#{latestTicket.id.slice(0, 8).toUpperCase()}</p>
+              </div>
+              <Button variant="ghost" icon={<X size={18} />} onClick={() => setLatestTicket(null)}>
+                {t('close')}
+              </Button>
+            </div>
+            <div className="p-5">
+              <div className="mb-4 border-b border-dashed border-slate-300 pb-4 text-center">
+                {settings.logoUrl ? <img className="mx-auto mb-3 max-h-20 max-w-36 object-contain" src={settings.logoUrl} alt={settings.shopName} /> : null}
+                <p className="text-2xl font-black text-slate-950">{settings.shopName}</p>
+                {settings.address ? <p className="text-xs font-semibold text-slate-500">{settings.address}</p> : null}
+                {settings.phone ? <p className="text-xs font-semibold text-slate-500">{settings.phone}</p> : null}
+              </div>
+              <div className="grid gap-1 border-b border-dashed border-slate-300 pb-4 text-sm font-semibold text-slate-600">
+                <p className="flex justify-between gap-3"><span>{t('date')}</span><span>{new Date(latestTicket.createdAt).toLocaleString('fr-FR')}</span></p>
+                <p className="flex justify-between gap-3"><span>{t('seller')}</span><span>{latestTicket.sellerName || '-'}</span></p>
+                <p className="flex justify-between gap-3"><span>{t('customerPhone')}</span><span>{latestTicket.customerPhone || '-'}</span></p>
+                <p className="flex justify-between gap-3"><span>{t('payment')}</span><span>{latestTicket.paymentMethod}</span></p>
+              </div>
+              <div className="border-b border-dashed border-slate-300 py-4">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-xs uppercase text-slate-500">
+                      <th className="pb-2">{t('products')}</th>
+                      <th className="pb-2 text-center">{t('quantity')}</th>
+                      <th className="pb-2 text-right">{t('total')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {latestTicket.items.map((item) => (
+                      <tr key={item.variantId} className="align-top">
+                        <td className="py-2">
+                          <p className="font-black text-slate-950">{item.name}</p>
+                          <p className="text-xs font-semibold text-slate-500">{item.sku}</p>
+                        </td>
+                        <td className="py-2 text-center font-bold">{item.quantity}</td>
+                        <td className="py-2 text-right font-black">{formatCurrency(item.unitPrice * item.quantity)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="grid gap-2 border-b border-dashed border-slate-300 py-4 text-sm">
+                <p className="flex justify-between"><span>{t('subtotal')}</span><strong>{formatCurrency(latestTicket.subtotal)}</strong></p>
+                <p className="flex justify-between"><span>{t('discount')}</span><strong>{formatCurrency(latestTicket.discount)}</strong></p>
+                <p className="flex justify-between"><span>TVA</span><strong>{formatCurrency(latestTicket.tax)}</strong></p>
+                <p className="flex justify-between text-xl font-black text-slate-950"><span>{t('total')}</span><strong>{formatCurrency(latestTicket.total)}</strong></p>
+                <p className="flex justify-between"><span>{t('paidAmount')}</span><strong>{formatCurrency(latestTicket.paidAmount)}</strong></p>
+                <p className="flex justify-between"><span>{t('remainingAmount')}</span><strong>{formatCurrency(Math.max(0, latestTicket.total - latestTicket.paidAmount))}</strong></p>
+              </div>
+              <p className="pt-4 text-center text-sm font-bold text-slate-500">{settings.footerMessage}</p>
+            </div>
+            <div className="grid gap-2 border-t border-slate-200 p-4 sm:grid-cols-3">
+              <Button icon={<Download size={18} />} onClick={() => downloadSaleTicket(latestTicket, settings)}>
+                {t('downloadPdf')}
+              </Button>
+              <Button variant="ghost" icon={<Printer size={18} />} onClick={() => window.print()}>
+                {t('printTicket')}
+              </Button>
+              <Button variant="secondary" icon={<ReceiptText size={18} />} onClick={() => setLatestTicket(null)}>
+                {t('newSale')}
               </Button>
             </div>
           </Card>

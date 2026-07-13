@@ -130,7 +130,7 @@
   "activate": "Activer",
   "deactivate": "Désactiver",
   "usersLoadError": "Impossible de charger les utilisateurs.",
-  "userDeleted": "Accès utilisateur désactivé avec succès. Les rapports de vente sont conservés.",
+  "userDeleted": "Utilisateur retiré de la liste. Les rapports de vente sont conservés.",
   "deleteUserFailed": "Impossible de désactiver cet utilisateur. Vérifie le script Supabase puis réessaie.",
   "preferences": "Préférences",
   "language": "Langue",

@@ -12,7 +12,7 @@ export function StockAlertsPage() {
   const lowStockProducts = products.filter((product) => product.stock < LOW_STOCK_THRESHOLD);
 
   return (
-    <div className="grid gap-5">
+    <div className="erp-page grid gap-5">
       <div>
         <p className="font-semibold text-red-700">{t('lowStock')}</p>
         <h2 className="text-3xl font-black text-emerald-950">{lowStockProducts.length} {t('alerts')}</h2>

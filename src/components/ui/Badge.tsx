@@ -6,10 +6,10 @@ interface BadgeProps {
 }
 
 const tones = {
-  green: 'bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300',
+  green: 'bg-[#245855]/10 text-[#245855] ring-1 ring-[#245855]/20',
   amber: 'bg-amber-100 text-amber-800 ring-1 ring-amber-300',
   red: 'bg-red-100 text-red-800 ring-1 ring-red-300',
-  slate: 'bg-slate-100 text-slate-800 ring-1 ring-slate-300',
+  slate: 'bg-[#dedede] text-[#111111] ring-1 ring-[#989a9a]/40',
 };
 
 export function Badge({ tone = 'slate', children }: BadgeProps) {

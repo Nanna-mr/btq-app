@@ -42,7 +42,7 @@ export function SalesReportPage() {
   };
 
   return (
-    <div className="grid gap-5">
+    <div className="erp-page grid gap-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="font-semibold text-emerald-800">{t('salesReports')}</p>

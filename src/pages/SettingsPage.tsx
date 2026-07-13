@@ -17,6 +17,7 @@ export function SettingsPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [password, setPassword] = useState('');
   const [theme, setTheme] = useState(() => localStorage.getItem('btq-theme') || 'light');
+  const [activeTab, setActiveTab] = useState<'settings' | 'preferences'>('settings');
 
   useEffect(() => {
     setForm(settings);
@@ -83,54 +84,11 @@ export function SettingsPage() {
   };
 
   return (
-    <div className="grid gap-5">
+    <div className="settings-page grid gap-5">
       {feedback ? <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-900">{feedback}</div> : null}
       {errorMessage ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-800">{errorMessage}</div> : null}
-      <div className="grid gap-5 lg:grid-cols-[26rem_1fr]">
-        <Card className="h-fit p-5">
-          <h2 className="mb-4 text-2xl font-black text-emerald-950">{t('settings')}</h2>
-          <form className="grid gap-4" onSubmit={handleSubmit}>
-            <Input label={t('shopName')} value={form.shopName} onChange={(event) => setForm({ ...form, shopName: event.target.value })} required />
-            <Input label={t('shopPhone')} value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} />
-            <Input label={t('shopAddress')} value={form.address} onChange={(event) => setForm({ ...form, address: event.target.value })} />
-            <Input label={t('ticketFooter')} value={form.footerMessage} onChange={(event) => setForm({ ...form, footerMessage: event.target.value })} />
-            <label className="grid gap-2">
-              <span className="field-label">{t('shopLogo')}</span>
-              <span className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg bg-amber-100 px-4 text-sm font-semibold text-amber-950 transition hover:bg-amber-200">
-                <ImagePlus size={18} />
-                {uploadLogo.isPending ? t('loading') : t('uploadLogo')}
-                <input className="hidden" type="file" accept="image/*" onChange={(event) => handleLogoChange(event.target.files?.[0] ?? null)} />
-              </span>
-            </label>
-            <Button type="submit" icon={<Save size={18} />} disabled={isLoading || saveSettings.isPending || uploadLogo.isPending}>
-              {saveSettings.isPending ? t('loading') : t('save')}
-            </Button>
-          </form>
-        </Card>
-        <Card className="p-5">
-          <h3 className="mb-4 text-xl font-black text-emerald-950">{t('preferences')}</h3>
-          <div className="grid gap-4">
-            <label className="form-field">
-              <span className="field-label">{t('language')}</span>
-              <select className="input-control" value={i18n.language} onChange={(event) => void i18n.changeLanguage(event.target.value)}>
-                <option value="fr">Français</option>
-                <option value="ar">العربية</option>
-              </select>
-            </label>
-            <label className="form-field">
-              <span className="field-label">{t('theme')}</span>
-              <select className="input-control" value={theme} onChange={(event) => handleThemeChange(event.target.value)}>
-                <option value="light">{t('lightTheme')}</option>
-                <option value="dark">{t('darkTheme')}</option>
-              </select>
-            </label>
-            <Input label={t('newPassword')} type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
-            <Button type="button" variant="secondary" onClick={handlePasswordUpdate}>
-              {t('updatePassword')}
-            </Button>
-          </div>
-        </Card>
-        <Card className="p-5">
+      <div className="settings-layout">
+        <Card className="settings-preview-card p-5">
           <h3 className="mb-4 text-xl font-black text-emerald-950">{t('ticketPreview')}</h3>
           <div className="mx-auto max-w-sm rounded-sm border border-slate-200 bg-white p-5 font-mono text-sm shadow-sm">
             <div className="border-b border-dashed border-slate-300 pb-4 text-center">
@@ -153,6 +111,57 @@ export function SettingsPage() {
               <p className="text-center text-xs text-slate-500">{form.footerMessage}</p>
             </div>
           </div>
+        </Card>
+        <Card className="settings-tabs-card p-5">
+          <div className="settings-tabs">
+            <button className={activeTab === 'settings' ? 'is-active' : ''} type="button" onClick={() => setActiveTab('settings')}>
+              {t('settings')}
+            </button>
+            <button className={activeTab === 'preferences' ? 'is-active' : ''} type="button" onClick={() => setActiveTab('preferences')}>
+              {t('preferences')}
+            </button>
+          </div>
+
+          {activeTab === 'settings' ? (
+            <form className="grid gap-4" onSubmit={handleSubmit}>
+              <Input label={t('shopName')} value={form.shopName} onChange={(event) => setForm({ ...form, shopName: event.target.value })} required />
+              <Input label={t('shopPhone')} value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} />
+              <Input label={t('shopAddress')} value={form.address} onChange={(event) => setForm({ ...form, address: event.target.value })} />
+              <Input label={t('ticketFooter')} value={form.footerMessage} onChange={(event) => setForm({ ...form, footerMessage: event.target.value })} />
+              <label className="grid gap-2">
+                <span className="field-label">{t('shopLogo')}</span>
+                <span className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg bg-amber-100 px-4 text-sm font-semibold text-amber-950 transition hover:bg-amber-200">
+                  <ImagePlus size={18} />
+                  {uploadLogo.isPending ? t('loading') : t('uploadLogo')}
+                  <input className="hidden" type="file" accept="image/*" onChange={(event) => handleLogoChange(event.target.files?.[0] ?? null)} />
+                </span>
+              </label>
+              <Button type="submit" icon={<Save size={18} />} disabled={isLoading || saveSettings.isPending || uploadLogo.isPending}>
+                {saveSettings.isPending ? t('loading') : t('save')}
+              </Button>
+            </form>
+          ) : (
+            <div className="grid gap-4">
+              <label className="form-field">
+                <span className="field-label">{t('language')}</span>
+                <select className="input-control" value={i18n.language} onChange={(event) => void i18n.changeLanguage(event.target.value)}>
+                  <option value="fr">Français</option>
+                  <option value="ar">العربية</option>
+                </select>
+              </label>
+              <label className="form-field">
+                <span className="field-label">{t('theme')}</span>
+                <select className="input-control" value={theme} onChange={(event) => handleThemeChange(event.target.value)}>
+                  <option value="light">{t('lightTheme')}</option>
+                  <option value="dark">{t('darkTheme')}</option>
+                </select>
+              </label>
+              <Input label={t('newPassword')} type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
+              <Button type="button" variant="secondary" onClick={handlePasswordUpdate}>
+                {t('updatePassword')}
+              </Button>
+            </div>
+          )}
         </Card>
       </div>
     </div>

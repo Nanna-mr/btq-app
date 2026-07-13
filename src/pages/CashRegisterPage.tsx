@@ -60,7 +60,7 @@ export function CashRegisterPage() {
   };
 
   return (
-    <div className="grid gap-4">
+    <div className="erp-page grid gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm font-bold uppercase tracking-wide text-slate-500">{t('cashRegister')}</p>

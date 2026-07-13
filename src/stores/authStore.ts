@@ -37,7 +37,7 @@ function mapProfile(row: UserProfileRow): AppUser {
     id: row.id,
     name: row.full_name,
     email: row.email,
-    role: roleForEmail(row.email),
+    role: row.role ?? roleForEmail(row.email),
   };
 }
 
